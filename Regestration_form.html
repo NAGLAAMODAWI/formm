@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "Segoe UI", Arial, sans-serif;
+     /* background-color: #0d1b2a;*/
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .form-container {
+      background-color: #1b263b;
+      border: 1px solid #1b263b;
+      border-radius: 10px;
+      /*padding: 40px 30px;*/
+      width: 365px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.3);
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 25px;
+      font-weight: 500;
+      color: #ffffff;
+      font-size: 20px;
+    }
+
+    label {
+      display: block;
+      margin-top: 12px;
+      margin-bottom: 5px;
+      font-size: 14px;
+      color: #ffffff;
+      margin-left: 8px;
+    }
+
+    input, select {
+      width: 95%;
+      margin-left: 5px;
+      padding: 10px;
+      border: 1px solid #415a77;
+      border-radius: 6px;
+      background-color: transparent;
+      /*color: #fff;*/
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input, select .option {
+      color: #fff;
+     
+    }
+  select {
+  color: #fff; /* النص أبيض */
+  border: 1px solid #3a4560;
+  border-radius: 6px;
+  padding: 8px;
+  font-size: 12px;
+}
+
+select option[value=""] {
+  color: #ccc; /* اللون الرمادي للنص الافتراضي "Select Country" */
+}
+
+    input:focus, select:focus {
+      border-color: #4cc9f0;
+      color: #fff;
+      background-color: #1b263b;
+    }
+
+    button {
+      width: 30%;
+      margin-top: 20px;
+      padding: 10px;
+      background: linear-gradient(90deg, #4cc9f0, #4361ee);
+      border: none;
+      border-radius: 6px;
+      color: white;
+      font-weight: bold;
+      font-size: 15px;
+      cursor: pointer;
+      transition: opacity 0.3s;
+    }
+
+    button:hover {
+      opacity: 0.9;
+    }
+
+    .message {
+      margin-top: 15px;
+      font-weight: bold;
+      text-align: center;
+    }
+
+    .success { color: #4cc9f0; }
+    .error { color: #ef476f; }
+  </style>
+</head>
+<body>
+  <div class="form-container">
+    <h2>User Registration Form</h2>
+
+    <form id="userForm">
+      <label>First Name</label>
+      <input type="text" id="first_name" required>
+
+      <label>Last Name</label>
+      <input type="text" id="last_name" required>
+
+      <label>Phone Number</label>
+      <input type="tel" id="phone_number" required pattern="^[0-9+\-\s]{8,15}$">
+
+      <label>Country</label>
+      <select id="country" required>
+        <option value=""style="color: white;">Select Country</option>
+      </select>
+
+      <label>City</label>
+      <select id="city" required>
+        <option value="" style="color: #fff;">Select City</option>
+      </select>
+
+    <label>Unit ID</label>
+<select id="unit_id" required>
+  <option value="">Select Unit</option>
+</select>
+
+      <button type="submit">Submit</button>
+    </form>
+
+    <div id="message" class="message"></div>
+  </div>
+
+  <script>
+   
+    async function loadCountriesAndCities() {
+      const cached = sessionStorage.getItem("countriesCities");
+      if (cached) return JSON.parse(cached);
+
+      try {
+        const res = await fetch("https://countriesnow.space/api/v0.1/countries");
+        if (!res.ok) throw new Error("Failed to fetch countries");
+        const json = await res.json();
+        if (!json.data) throw new Error("Invalid API structure");
+
+        sessionStorage.setItem("countriesCities", JSON.stringify(json.data));
+        return json.data;
+      } catch (err) {
+        console.error("Countries API error:", err);
+        return [
+          { country: "Saudi Arabia", cities: ["Riyadh", "Jeddah", "Dammam"] },
+          { country: "United Arab Emirates", cities: ["Dubai", "Abu Dhabi", "Sharjah"] },
+          { country: "Egypt", cities: ["Cairo", "Alexandria", "Giza"] },
+        ];
+      }
+    }
+
+    (async () => {
+      const countriesData = await loadCountriesAndCities();
+      const countrySelect = document.getElementById("country");
+      const citySelect = document.getElementById("city");
+
+      // Populate countries
+      countrySelect.innerHTML = `<option value="">Select Country</option>`;
+      countriesData.forEach((item) => {
+        const option = document.createElement("option");
+        option.value = item.country;
+        option.textContent = item.country;
+        countrySelect.appendChild(option);
+      });
+
+      // Populate cities when country changes
+      countrySelect.addEventListener("change", (e) => {
+        const selected = e.target.value;
+        const selectedCountry = countriesData.find((c) => c.country === selected);
+        citySelect.innerHTML = `<option value="">Select City</option>`;
+        if (selectedCountry && selectedCountry.cities) {
+          selectedCountry.cities.forEach((city) => {
+            const opt = document.createElement("option");
+            opt.value = city;
+            opt.textContent = city;
+            citySelect.appendChild(opt);
+          });
+        }
+      });
+
+     
+    })();
+
+    // Form submission
+    const form = document.getElementById("userForm");
+    const msg = document.getElementById("message");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      msg.textContent = "Sending...";
+      msg.className = "message";
+
+      const data = {
+        first_name: form.first_name.value.trim(),
+        last_name: form.last_name.value.trim(),
+        phone_number: form.phone_number.value.trim(),
+        city: form.city.value.trim(),
+        country: form.country.value.trim(),
+        unit_id: form.unit_id.value.trim(),
+      };
+
+      try {
+        const res = await fetch("https://development.vr-twins.com/api/form", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        });
+
+        const result = await res.json();
+
+        if (res.ok) {
+          msg.textContent = "✅ Data submitted successfully!";
+          msg.className = "message success";
+          form.reset();
+        } else {
+          msg.textContent = "❌ Submission failed: " + (result.message || res.statusText);
+          msg.className = "message error";
+        }
+      } catch (err) {
+        msg.textContent = "❌ An error occurred during submission.";
+        msg.className = "message error";
+        console.error(err);
+      }
+    });
+  </script>
+
+  <script>
+  const unitSelect = document.getElementById("unit_id");
+for (let i = 1; i <= 29; i++) {
+  const opt = document.createElement("option");
+  opt.value = i; // رقم فقط
+  opt.textContent = `Unit ${i}`; // العرض للمستخدم
+  unitSelect.appendChild(opt);
+}
+</script>
+</body>
+</html>
