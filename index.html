@@ -38,7 +38,7 @@
     label {
       display: block;
       margin-top: 12px;
-     /* margin-bottom: 5px;*/
+      /*margin-bottom: 5px;*/
       font-size: 14px;
       color: #ffffff;
       margin-left: 8px;
@@ -82,6 +82,7 @@ select option[value=""] {
     button {
       width: 30%;
       margin-top: 20px;
+      margin-left: 3%;
       padding: 10px;
       background: linear-gradient(90deg, #4cc9f0, #4361ee);
       border: none;
@@ -144,59 +145,90 @@ select option[value=""] {
 
   <script>
    
-    async function loadCountriesAndCities() {
-      const cached = sessionStorage.getItem("countriesCities");
-      if (cached) return JSON.parse(cached);
 
-      try {
-        const res = await fetch("https://countriesnow.space/api/v0.1/countries");
-        if (!res.ok) throw new Error("Failed to fetch countries");
-        const json = await res.json();
-        if (!json.data) throw new Error("Invalid API structure");
+// نقوم بتعريف متغير عالمي لتخزين البيانات المجلوبة مرة واحدة
+let countriesAndCities = [];
 
-        sessionStorage.setItem("countriesCities", JSON.stringify(json.data));
-        return json.data;
-      } catch (err) {
-        console.error("Countries API error:", err);
-        return [
-          { country: "Saudi Arabia", cities: ["Riyadh", "Jeddah", "Dammam"] },
-          { country: "United Arab Emirates", cities: ["Dubai", "Abu Dhabi", "Sharjah"] },
-          { country: "Egypt", cities: ["Cairo", "Alexandria", "Giza"] },
-        ];
-      }
+async function loadCountriesFromLocalFile() {
+    try {
+        const res = await fetch('cities_data.json');
+        
+        if (!res.ok) throw new Error("Local file cities_data.json not found or failed to load.");
+        
+        const data = await res.json();
+      
+        const uniqueCountries = [...new Set(data.map(item => item.country))].sort();
+        
+        // تخزين البيانات كاملة لاستخدامها في دالة loadCities
+        countriesAndCities = data; 
+        
+        return uniqueCountries;
+
+    } catch (err) {
+        console.error("Local Data Load Error:", err);
+        //  إرجاع قائمة يدوية إذا فشل تحميل الملف
+        return ["Saudi Arabia", "United Arab Emirates", "Egypt"];
     }
+}
 
-    (async () => {
-      const countriesData = await loadCountriesAndCities();
-      const countrySelect = document.getElementById("country");
-      const citySelect = document.getElementById("city");
+function loadCitiesFromLocalData(selectedCountry) {
+    if (!selectedCountry) return [];
 
-      // Populate countries
-      countrySelect.innerHTML = `<option value="">Select Country</option>`;
-      countriesData.forEach((item) => {
+    // تصفية البيانات الكاملة للحصول على مدن الدولة المختارة فقط
+    const cities = countriesAndCities
+        .filter(item => item.country === selectedCountry)
+        .map(item => item.name);
+    
+    // إزالة المدن المكررة والفرز
+    return [...new Set(cities)].sort();
+}
+
+// التنفيذ الفوري (Initializer)
+(async () => {
+    // 1. جلب قائمة الدول من الملف المحلي
+    const countriesNames = await loadCountriesFromLocalFile();
+    const countrySelect = document.getElementById("country");
+    const citySelect = document.getElementById("city");
+
+    // Populate countries
+    countrySelect.innerHTML = `<option value="">Select Country</option>`;
+
+    countriesNames.forEach((name) => {
         const option = document.createElement("option");
-        option.value = item.country;
-        option.textContent = item.country;
+        option.value = name; // القيمة هي اسم الدولة نفسه
+        option.textContent = name;
         countrySelect.appendChild(option);
-      });
+    });
 
-      // Populate cities when country changes
-      countrySelect.addEventListener("change", (e) => {
-        const selected = e.target.value;
-        const selectedCountry = countriesData.find((c) => c.country === selected);
-        citySelect.innerHTML = `<option value="">Select City</option>`;
-        if (selectedCountry && selectedCountry.cities) {
-          selectedCountry.cities.forEach((city) => {
-            const opt = document.createElement("option");
-            opt.value = city;
-            opt.textContent = city;
-            citySelect.appendChild(opt);
-          });
+    // 2. Event Listener: جلب المدن عند تغيير الدولة
+    countrySelect.addEventListener("change", (e) => {
+        const selectedCountry = e.target.value;
+        citySelect.innerHTML = `<option value="">Select City</option>`; // Reset city list
+        
+        if (selectedCountry) {
+            const cities = loadCitiesFromLocalData(selectedCountry);
+            
+            cities.forEach((cityName) => {
+                const opt = document.createElement("option");
+                opt.value = cityName;
+                opt.textContent = cityName;
+                citySelect.appendChild(opt);
+            });
         }
-      });
+    });
 
-     
-    })();
+    const form = document.getElementById("userForm");
+    form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const data = {
+            country: form.country.value.trim(), 
+        };
+    });
+    
+    // 3. جلب وتعبئة قائمة الوحدات من API
+    await loadUnitsFromAPI();
+})();
+
 
     // Form submission
     const form = document.getElementById("userForm");
@@ -243,14 +275,58 @@ select option[value=""] {
   </script>
 
   <script>
+const UNIT_API_URL = "https://development.vr-twins.com/api/units";
+
+async function loadUnitsFromAPI() {
   const unitSelect = document.getElementById("unit_id");
-for (let i = 1; i <= 29; i++) {
-  const opt = document.createElement("option");
-  opt.value = i; // رقم فقط
-  opt.textContent = `Unit ${i}`; // العرض للمستخدم
-  unitSelect.appendChild(opt);
+
+  try {
+    const res = await fetch(UNIT_API_URL);
+    if (!res.ok) throw new Error("Failed to fetch units");
+
+    const json = await res.json();
+
+    // ✅ هنا المكان الصح
+    const units = json.data?.data || [];
+const limited = units.slice(2, 31);
+
+limited.forEach(unit => {
+  if (unit.unit_no) {
+    const opt = document.createElement("option");
+    opt.value = unit.unit_no;
+    opt.textContent = unit.unit_no;
+    unitSelect.appendChild(opt);
+  }
+});
+
+  } catch (err) {
+    console.error("Error loading units:", err);
+  }
 }
+
+
+
+// async function logUnitNumbers() {
+//   try {
+//     const res = await fetch(UNIT_API_URL);
+//     if (!res.ok) throw new Error("Failed to fetch units");
+
+//     const json = await res.json();
+
+//     const units = json.data?.data || [];
+
+//     units.forEach(unit => {
+//       console.log("unit_no:", unit.unit_no);
+//     });
+
+//   } catch (err) {
+//     console.error("*****************************Error fetching units:", err);
+//   }
+// }
+
+// // نداء الدالة
+// logUnitNumbers();
+
 </script>
 </body>
 </html>
-
