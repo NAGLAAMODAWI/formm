@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Virtual twins</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" id="metaViewport" content="user-scalable=no, initial-scale=1, width=device-width, viewport-fit=cover" data-tdv-general-scale="0.5"/>
+    <meta name="apple-mobile-web-app-capable" content="yes"/>
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <script src="lib/tdvplayer.js?v=1763460703656"></script>
+    <link rel="preload" href="locale/en.txt?v=1763460703656" as="fetch" crossorigin="anonymous"/>
+	<link rel="preload" href="script.js?v=1763460703656" as="script"/>
+	<meta name="description" content="Virtual Tour"/>
+	<meta name="theme-color" content="#FFFFFF"/>
+     <link rel="icon" type="image/png" href="logo.png">
+    <script src="script.js?v=1763460703656"></script>
+    <style type="text/css">
+        html, body { height:100%; width:100%; height:100vh; width:100vw; margin:0; padding:0; overflow:hidden; }
+        .fill-viewport { position:fixed; top:0; left:0; right:0; bottom:0; padding:0; margin:0; overflow: hidden; }
+        .fill-viewport.landscape-left { left: env(safe-area-inset-left); }
+		.fill-viewport.landscape-right { right: env(safe-area-inset-right); }
+        #viewer { z-index:1; }
+        #preloadContainer { z-index:2; opacity:0; background-color:rgba(255,255,255,0.11); transition: opacity 0.5s; -webkit-transition: opacity 0.5s; -moz-transition: opacity 0.5s; -o-transition: opacity 0.5s;}
+    </style>
+    <link rel="stylesheet" href="fonts.css?v=1763460703656">
+</head>
+<body>
+    <div id="preloadContainer" class="fill-viewport"><div style="z-index: 4; position: absolute; overflow: hidden; background-size: contain; background-image: url('loading/HTMLImage_6784FA5A_68F6_ABF8_41D0_90EE710CA204.PNG'); background-repeat: no-repeat; background-position: center center; overflow: hidden; left: 0%; bottom: 30.64%; width: 100.00%; height: 44.41%" ></div></div>
+    <div id="viewer" class="fill-viewport"></div>
+    <script src="custum.js"></script>
+</body>
+</html>
